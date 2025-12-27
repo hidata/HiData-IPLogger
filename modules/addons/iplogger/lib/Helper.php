@@ -21,6 +21,8 @@ class Helper
             'action_register' => 'on',
             'action_profile' => 'on',
             'action_order' => 'on',
+            'trusted_proxies' => '',
+            'trust_private_proxies' => 'off',
             'retention_days' => '180',
         ];
     }

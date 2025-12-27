@@ -91,7 +91,7 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                 <ul class="pagination">
                     <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                         <li class="<?php echo $i === $page ? 'active' : ''; ?>">
-                            <a href="?module=iplogger&amp;page=<?php echo $i; ?>&amp;client_id=<?php echo $search['client_id']; ?>&amp;ip=<?php echo $search['ip']; ?>&amp;action_name=<?php echo $search['action_name']; ?>"><?php echo $i; ?></a>
+                            <a href="?module=iplogger&amp;page=<?php echo $i; ?>&amp;client_id=<?php echo htmlspecialchars($searchEncoded['client_id'], ENT_QUOTES, 'UTF-8'); ?>&amp;ip=<?php echo htmlspecialchars($searchEncoded['ip'], ENT_QUOTES, 'UTF-8'); ?>&amp;action_name=<?php echo htmlspecialchars($searchEncoded['action_name'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo $i; ?></a>
                         </li>
                     <?php endfor; ?>
                 </ul>

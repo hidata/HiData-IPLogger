@@ -56,6 +56,19 @@ $settings = $settings ?? HiDataIPLogger\Helper::getSettings();
                     ثبت سفارش جدید
                 </label>
             </div>
+            <hr />
+            <div class="form-group" style="max-width:420px;">
+                <label for="trustedProxies">پروکسی‌های معتمد (IP یا CIDR)</label>
+                <textarea id="trustedProxies" name="trusted_proxies" class="form-control" rows="3" placeholder="مثال: 203.0.113.10, 203.0.113.0/24, 2001:db8::/32"><?php echo htmlspecialchars($settings['trusted_proxies'] ?? '', ENT_QUOTES, 'UTF-8'); ?></textarea>
+                <p class="help-block">فقط درخواست‌های دارای REMOTE_ADDR در این لیست به عنوان پروکسی مورد اعتماد جهت استفاده از X-Forwarded-For در نظر گرفته می‌شوند.</p>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="trust_private_proxies" <?php echo ($settings['trust_private_proxies'] ?? 'off') === 'on' ? 'checked' : ''; ?> />
+                    اعتماد به بازه‌های خصوصی/رزرو شده
+                </label>
+                <p class="help-block">به صورت پیش‌فرض غیرفعال است؛ فقط در صورت نیاز و آگاهی فعال شود.</p>
+            </div>
             <div class="form-group" style="margin-top:15px; max-width:320px;">
                 <label for="retentionDays">مدت نگهداری (روز)</label>
                 <input id="retentionDays" type="number" class="form-control" min="0" name="retention_days" value="<?php echo (int) ($settings['retention_days'] ?? 180); ?>" />
