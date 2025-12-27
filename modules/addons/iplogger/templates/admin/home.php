@@ -11,7 +11,7 @@ $actionLabels = [
 
 $countryNamesFa = require __DIR__ . '/../assets/countries-fa.php';
 $networkLabels = [
-    'mobile' => 'موبایلی',
+    'mobile' => 'موبایل',
     'proxy' => 'پراکسی',
     'hosting' => 'دیتاسنتر',
 ];
