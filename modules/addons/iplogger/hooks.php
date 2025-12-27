@@ -249,7 +249,7 @@ function iplogger_enrichPendingLogs(): void
 
     $pending = Capsule::table('mod_iplogger')
         ->where(function ($query) {
-            $query->whereNull('country')->orWhereNull('asn');
+            $query->whereNull('country')->orWhereNull('asn')->orWhereNull('network');
         })
         ->orderBy('time', 'desc')
         ->limit(20)
@@ -269,6 +269,7 @@ function iplogger_enrichPendingLogs(): void
             ->update([
                 'country' => $enriched['country'],
                 'asn' => $enriched['asn'],
+                'network' => $enriched['network'],
             ]);
 
         Helper::debugLog('enrich-pending:updated', ['id' => $row->id, 'ip' => $row->ip], '', $enriched);
@@ -298,7 +299,7 @@ function iplogger_fetchIpDetails(string $ip): ?array
         return null;
     }
 
-    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message';
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message,mobile,proxy,hosting';
     Helper::debugLog('ip-lookup:request', ['ip' => $ip, 'url' => $url]);
 
     try {
@@ -311,11 +312,25 @@ function iplogger_fetchIpDetails(string $ip): ?array
             return null;
         }
 
-        Helper::debugLog('ip-lookup:success', ['ip' => $ip], '', ['country' => $data['countryCode'] ?? null, 'asn' => $data['isp'] ?? null]);
+        $network = null;
+        $isProxy = (bool) ($data['proxy'] ?? false);
+        $isHosting = (bool) ($data['hosting'] ?? false);
+        $isMobile = (bool) ($data['mobile'] ?? false);
+
+        if ($isProxy) {
+            $network = 'proxy';
+        } elseif ($isHosting) {
+            $network = 'hosting';
+        } elseif ($isMobile) {
+            $network = 'mobile';
+        }
+
+        Helper::debugLog('ip-lookup:success', ['ip' => $ip], '', ['country' => $data['countryCode'] ?? null, 'asn' => $data['isp'] ?? null, 'network' => $network]);
 
         return [
             'country' => $data['countryCode'] ?? null,
             'asn' => $data['isp'] ?? null,
+            'network' => $network,
         ];
     } catch (Exception $e) {
         Helper::debugLog('ip-lookup:error', ['ip' => $ip, 'url' => $url], $e->getMessage());
