@@ -65,10 +65,17 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                             $country = htmlspecialchars((string) $log->country, ENT_QUOTES, 'UTF-8');
                             $asn = htmlspecialchars((string) $log->asn, ENT_QUOTES, 'UTF-8');
                             $otherClients = ($ipUsage[$log->ip] ?? 0) - 1;
+                            $clientName = $clientNames[(int) $log->client_id] ?? 'نامشخص';
+                            $clientLabel = ((int) $log->client_id) . ' - ' . $clientName;
+                            $clientUrl = 'clientssummary.php?userid=' . (int) $log->client_id;
                         ?>
                         <tr>
                             <td><?php echo htmlspecialchars($log->time, ENT_QUOTES, 'UTF-8'); ?></td>
-                            <td><?php echo (int) $log->client_id; ?></td>
+                            <td>
+                                <a href="<?php echo $clientUrl; ?>" target="_blank">
+                                    <?php echo htmlspecialchars($clientLabel, ENT_QUOTES, 'UTF-8'); ?>
+                                </a>
+                            </td>
                             <td><?php echo $actionLabels[$log->action] ?? htmlspecialchars($log->action, ENT_QUOTES, 'UTF-8'); ?></td>
                             <td>
                                 <?php echo $ipText; ?>

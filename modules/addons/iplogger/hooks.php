@@ -140,44 +140,11 @@ add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
 });
 
 add_hook('AfterCronJob', 1, function () {
-    $settings = Helper::getSettings();
+    iplogger_enrichPendingLogs();
+});
 
-    $retention = max(0, (int) ($settings['retention_days'] ?? 0));
-    if ($retention > 0) {
-        $cutoff = (new DateTimeImmutable('now'))
-            ->modify("-{$retention} days")
-            ->format('Y-m-d H:i:s');
-
-        Capsule::table('mod_iplogger')
-            ->where('time', '<', $cutoff)
-            ->delete();
-    }
-
-    if (($settings['log_enabled'] ?? 'off') !== 'on') {
-        return;
-    }
-
-    $pending = Capsule::table('mod_iplogger')
-        ->where(function ($query) {
-            $query->whereNull('country')->orWhereNull('asn');
-        })
-        ->orderBy('time', 'desc')
-        ->limit(20)
-        ->get();
-
-    foreach ($pending as $row) {
-        $enriched = iplogger_fetchIpDetails($row->ip);
-        if (!$enriched) {
-            continue;
-        }
-
-        Capsule::table('mod_iplogger')
-            ->where('id', $row->id)
-            ->update([
-                'country' => $enriched['country'],
-                'asn' => $enriched['asn'],
-            ]);
-    }
+add_hook('DailyCronJob', 1, function () {
+    iplogger_pruneOldLogs();
 });
 
 add_hook('AdminAreaClientSummaryPage', 1, function ($vars) {
@@ -271,6 +238,53 @@ add_hook('AdminAreaClientSummaryPage', 1, function ($vars) {
     <?php
     return ob_get_clean();
 });
+
+function iplogger_enrichPendingLogs(): void
+{
+    $settings = Helper::getSettings();
+    if (($settings['log_enabled'] ?? 'off') !== 'on') {
+        return;
+    }
+
+    $pending = Capsule::table('mod_iplogger')
+        ->where(function ($query) {
+            $query->whereNull('country')->orWhereNull('asn');
+        })
+        ->orderBy('time', 'desc')
+        ->limit(20)
+        ->get();
+
+    foreach ($pending as $row) {
+        $enriched = iplogger_fetchIpDetails($row->ip);
+        if (!$enriched) {
+            continue;
+        }
+
+        Capsule::table('mod_iplogger')
+            ->where('id', $row->id)
+            ->update([
+                'country' => $enriched['country'],
+                'asn' => $enriched['asn'],
+            ]);
+    }
+}
+
+function iplogger_pruneOldLogs(): void
+{
+    $settings = Helper::getSettings();
+    $retention = max(0, (int) ($settings['retention_days'] ?? 0));
+    if ($retention <= 0) {
+        return;
+    }
+
+    $cutoff = (new \DateTimeImmutable('now'))
+        ->modify("-{$retention} days")
+        ->format('Y-m-d H:i:s');
+
+    Capsule::table('mod_iplogger')
+        ->where('time', '<', $cutoff)
+        ->delete();
+}
 
 function iplogger_fetchIpDetails(string $ip): ?array
 {

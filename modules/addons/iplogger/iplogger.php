@@ -13,7 +13,7 @@ require_once __DIR__ . '/lib/Helper.php';
 function iplogger_config()
 {
     return [
-        'name' => 'HiData IP Logger',
+        'name' => 'گزارش فعالیت مشتریان',
         'description' => 'ثبت دقیق IP و agent کاربران در رویدادهای امنیتی WHMCS.',
         'author' => 'HiData',
         'language' => 'persian',
@@ -132,6 +132,25 @@ function iplogger_output($vars)
         ->offset($offset)
         ->get();
 
+    $clientNames = [];
+    $clientIds = [];
+    foreach ($logs as $log) {
+        $clientIds[] = (int) $log->client_id;
+    }
+
+    $clientIds = array_values(array_unique(array_filter($clientIds)));
+    if (!empty($clientIds)) {
+        $clients = Capsule::table('tblclients')
+            ->select('id', 'firstname', 'lastname')
+            ->whereIn('id', $clientIds)
+            ->get();
+
+        foreach ($clients as $client) {
+            $fullName = trim(trim((string) $client->firstname) . ' ' . trim((string) $client->lastname));
+            $clientNames[(int) $client->id] = $fullName !== '' ? $fullName : 'بدون نام';
+        }
+    }
+
     $ipList = [];
     foreach ($logs as $log) {
         $ipList[] = $log->ip;
@@ -155,6 +174,7 @@ function iplogger_output($vars)
         'page' => $page,
         'limit' => $limit,
         'total' => $total,
+        'clientNames' => $clientNames,
         'search' => [
             'client_id' => htmlspecialchars($searchClient, ENT_QUOTES, 'UTF-8'),
             'ip' => htmlspecialchars($searchIp, ENT_QUOTES, 'UTF-8'),
