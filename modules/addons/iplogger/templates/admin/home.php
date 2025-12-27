@@ -9,6 +9,8 @@ $actionLabels = [
     'order' => 'ثبت سفارش',
 ];
 
+$countryNamesFa = require __DIR__ . '/../assets/countries-fa.php';
+
 $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
 ?>
 <div class="card">
@@ -62,7 +64,12 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                         <?php
                             $ipText = htmlspecialchars($log->ip, ENT_QUOTES, 'UTF-8');
                             $agent = htmlspecialchars($log->agent, ENT_QUOTES, 'UTF-8');
-                            $country = htmlspecialchars((string) $log->country, ENT_QUOTES, 'UTF-8');
+                            $countryCode = strtoupper(trim((string) $log->country));
+                            $country = htmlspecialchars($countryCode, ENT_QUOTES, 'UTF-8');
+                            $countryFa = $countryNamesFa[$countryCode] ?? null;
+                            $countryFaText = $countryFa !== null ? htmlspecialchars($countryFa, ENT_QUOTES, 'UTF-8') : null;
+                            $flagFile = __DIR__ . '/../assets/flags/' . strtolower($countryCode) . '.svg';
+                            $flagUrl = is_file($flagFile) ? '../modules/addons/iplogger/templates/assets/flags/' . strtolower($countryCode) . '.svg' : null;
                             $asn = htmlspecialchars((string) $log->asn, ENT_QUOTES, 'UTF-8');
                             $otherClients = ($ipUsage[$log->ip] ?? 0) - 1;
                             $clientName = $clientNames[(int) $log->client_id] ?? 'نامشخص';
@@ -83,7 +90,21 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                                     <div class="text-muted" style="font-size:11px;">ثبت شده برای <?php echo $otherClients; ?> مشتری دیگر</div>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo $country !== '' ? $country : '<span class="text-muted">نامشخص</span>'; ?></td>
+                            <td>
+                                <?php if ($country !== ''): ?>
+                                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                        <?php if ($flagUrl !== null): ?>
+                                            <img src="<?php echo $flagUrl; ?>" alt="" style="width:20px; height:13px; object-fit:cover; border:1px solid #ddd; border-radius:2px;">
+                                        <?php endif; ?>
+                                        <strong><?php echo $country; ?></strong>
+                                    </div>
+                                    <?php if ($countryFaText !== null): ?>
+                                        <div class="text-muted" style="font-size:11px; margin-top:4px;"><?php echo $countryFaText; ?></div>
+                                    <?php endif; ?>
+                                <?php else: ?>
+                                    <span class="text-muted">نامشخص</span>
+                                <?php endif; ?>
+                            </td>
                             <td><?php echo $asn !== '' ? $asn : '<span class="text-muted">نامشخص</span>'; ?></td>
                             <td style="max-width:220px; word-break:break-all;"> <?php echo $agent; ?> </td>
                         </tr>
