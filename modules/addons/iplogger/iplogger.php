@@ -60,7 +60,8 @@ function iplogger_deactivate()
 function iplogger_output($vars)
 {
     if (!Helper::adminHasAccess()) {
-        return '<div class="alert alert-danger">دسترسی غیرمجاز</div>';
+        echo '<div class="alert alert-danger">دسترسی غیرمجاز</div>';
+        return;
     }
 
     $view = isset($_GET['view']) && $_GET['view'] === 'settings' ? 'settings' : 'home';
@@ -68,7 +69,8 @@ function iplogger_output($vars)
     if ($view === 'settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $token = $_POST['token'] ?? '';
         if (!iplogger_isValidToken($token)) {
-            return '<div class="alert alert-danger">توکن معتبر نیست.</div>';
+            echo '<div class="alert alert-danger">توکن معتبر نیست.</div>';
+            return;
         }
 
         $payload = [
@@ -94,7 +96,9 @@ function iplogger_output($vars)
             'token' => iplogger_token(),
             'settings' => $settings,
         ];
-        return iplogger_render('settings', $data);
+
+        echo iplogger_render('settings', $data);
+        return;
     }
 
     $page = max(1, (int) ($_GET['page'] ?? 1));
@@ -163,7 +167,7 @@ function iplogger_output($vars)
         ],
     ];
 
-    return iplogger_render('home', $data);
+    echo iplogger_render('home', $data);
 }
 
 function iplogger_isValidToken(string $token): bool
