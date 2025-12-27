@@ -154,6 +154,7 @@ class Helper
                 'ip' => $ip,
                 'asn' => null,
                 'country' => null,
+                'network' => null,
                 'agent' => $agent,
                 'time' => Capsule::raw('NOW()'),
             ]);
