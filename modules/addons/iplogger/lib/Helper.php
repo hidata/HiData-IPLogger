@@ -4,6 +4,7 @@ namespace HiDataIPLogger;
 
 use WHMCS\Database\Capsule;
 use WHMCS\User\Admin;
+use Throwable;
 
 class Helper
 {
@@ -98,15 +99,29 @@ class Helper
 
     public static function logEvent(int $clientId, string $action, string $ip, string $agent): void
     {
-        Capsule::table('mod_iplogger')->insert([
-            'client_id' => $clientId,
-            'action' => $action,
-            'ip' => $ip,
-            'asn' => null,
-            'country' => null,
-            'agent' => $agent,
-            'time' => Capsule::raw('NOW()'),
-        ]);
+        static $tableReady = null;
+
+        if ($tableReady === null) {
+            $tableReady = Capsule::schema()->hasTable('mod_iplogger');
+        }
+
+        if (!$tableReady) {
+            return;
+        }
+
+        try {
+            Capsule::table('mod_iplogger')->insert([
+                'client_id' => $clientId,
+                'action' => $action,
+                'ip' => $ip,
+                'asn' => null,
+                'country' => null,
+                'agent' => $agent,
+                'time' => Capsule::raw('NOW()'),
+            ]);
+        } catch (Throwable $e) {
+            self::logSilently('HiData IP Logger insert failed: ' . $e->getMessage());
+        }
     }
 
     public static function createConfigTable(): void
@@ -115,5 +130,16 @@ class Helper
             $table->string('setting')->unique();
             $table->text('value')->nullable();
         });
+    }
+
+    private static function logSilently(string $message): void
+    {
+        try {
+            if (function_exists('logActivity')) {
+                logActivity($message);
+            }
+        } catch (Throwable $e) {
+            // Ignore logging failures to avoid affecting callers.
+        }
     }
 }
