@@ -163,6 +163,38 @@ class Helper
         }
     }
 
+    /**
+     * Format a timestamp to both Gregorian and Jalali strings for display.
+     */
+    public static function formatTimeWithJalali($timestamp, string $separator = '/', ?string $timezone = null): array
+    {
+        $result = ['gregorian' => '', 'jalali' => ''];
+
+        try {
+            $tz = $timezone ? new \DateTimeZone($timezone) : new \DateTimeZone(date_default_timezone_get());
+            $dt = new \DateTimeImmutable((string) $timestamp, $tz);
+            $dt = $dt->setTimezone($tz);
+
+            $result['gregorian'] = $dt->format('Y-m-d H:i:s');
+
+            $gy = (int) $dt->format('Y');
+            $gm = (int) $dt->format('n');
+            $gd = (int) $dt->format('j');
+
+            if (function_exists('gregorian_to_jalali')) {
+                $jalaliParts = gregorian_to_jalali($gy, $gm, $gd);
+                if (is_array($jalaliParts) && count($jalaliParts) === 3) {
+                    [$jy, $jm, $jd] = $jalaliParts;
+                    $result['jalali'] = sprintf('%04d%s%02d%s%02d', $jy, $separator, $jm, $separator, $jd);
+                }
+            }
+        } catch (Throwable $e) {
+            // Ignore formatting failures; leave empty values.
+        }
+
+        return $result;
+    }
+
     public static function createConfigTable(): void
     {
         Capsule::schema()->create('mod_iplogger_conf', function ($table) {

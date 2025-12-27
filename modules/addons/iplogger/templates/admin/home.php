@@ -83,7 +83,13 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                             $clientUrl = 'clientssummary.php?userid=' . (int) $log->client_id;
                         ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($log->time, ENT_QUOTES, 'UTF-8'); ?></td>
+                            <?php $formattedTime = \HiDataIPLogger\Helper::formatTimeWithJalali($log->time, '/'); ?>
+                            <td>
+                                <div><?php echo htmlspecialchars($formattedTime['gregorian'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php if ($formattedTime['jalali'] !== ''): ?>
+                                    <div class="text-muted" style="font-size:11px;"><?php echo htmlspecialchars($formattedTime['jalali'], ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <a href="<?php echo $clientUrl; ?>" target="_blank">
                                     <?php echo htmlspecialchars($clientLabel, ENT_QUOTES, 'UTF-8'); ?>
