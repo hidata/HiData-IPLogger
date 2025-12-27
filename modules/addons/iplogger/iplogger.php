@@ -80,6 +80,8 @@ function iplogger_output($vars)
             'action_register' => isset($_POST['action_register']) ? 'on' : 'off',
             'action_profile' => isset($_POST['action_profile']) ? 'on' : 'off',
             'action_order' => isset($_POST['action_order']) ? 'on' : 'off',
+            'trusted_proxies' => trim((string) ($_POST['trusted_proxies'] ?? '')),
+            'trust_private_proxies' => isset($_POST['trust_private_proxies']) ? 'on' : 'off',
             'retention_days' => max(0, (int) ($_POST['retention_days'] ?? 180)),
         ];
         Helper::saveSettings($payload);
@@ -102,6 +104,11 @@ function iplogger_output($vars)
     $searchClient = trim((string) ($_GET['client_id'] ?? ''));
     $searchIp = trim((string) ($_GET['ip'] ?? ''));
     $searchAction = trim((string) ($_GET['action_name'] ?? ''));
+    $searchRaw = [
+        'client_id' => $searchClient,
+        'ip' => $searchIp,
+        'action_name' => $searchAction,
+    ];
 
     $query = Capsule::table('mod_iplogger');
     if ($searchClient !== '') {
@@ -148,6 +155,11 @@ function iplogger_output($vars)
             'client_id' => htmlspecialchars($searchClient, ENT_QUOTES, 'UTF-8'),
             'ip' => htmlspecialchars($searchIp, ENT_QUOTES, 'UTF-8'),
             'action_name' => htmlspecialchars($searchAction, ENT_QUOTES, 'UTF-8'),
+        ],
+        'searchEncoded' => [
+            'client_id' => rawurlencode($searchRaw['client_id']),
+            'ip' => rawurlencode($searchRaw['ip']),
+            'action_name' => rawurlencode($searchRaw['action_name']),
         ],
     ];
 

@@ -2,7 +2,6 @@
 
 use HiDataIPLogger\Helper;
 use WHMCS\Database\Capsule;
-use Throwable;
 
 if (!defined('WHMCS')) {
     die('This file cannot be accessed directly');
@@ -100,8 +99,12 @@ add_hook('AfterCronJob', 1, function () {
 
     $retention = max(0, (int) ($settings['retention_days'] ?? 0));
     if ($retention > 0) {
+        $cutoff = (new DateTimeImmutable('now'))
+            ->modify("-{$retention} days")
+            ->format('Y-m-d H:i:s');
+
         Capsule::table('mod_iplogger')
-            ->whereRaw('time < DATE_SUB(NOW(), INTERVAL ? DAY)', [$retention])
+            ->where('time', '<', $cutoff)
             ->delete();
     }
 
@@ -257,12 +260,76 @@ function iplogger_isTrustedProxy(string $ip): bool
         return false;
     }
 
-    $trusted = array_filter(array_map('trim', explode(',', $_ENV['IPLOGGER_TRUSTED_PROXIES'] ?? '')));
-    if (in_array($ip, $trusted, true)) {
+    static $proxyConfig = null;
+
+    if ($proxyConfig === null) {
+        $settings = Helper::getSettings();
+        $allowlistRaw = $settings['trusted_proxies'] ?? '';
+
+        if ($allowlistRaw === '' && !empty($_ENV['IPLOGGER_TRUSTED_PROXIES'])) {
+            $allowlistRaw = $_ENV['IPLOGGER_TRUSTED_PROXIES'];
+        }
+
+        $proxyConfig = [
+            'allowlist' => array_filter(array_map('trim', preg_split('/[,\\s]+/', $allowlistRaw))),
+            'trust_private' => ($settings['trust_private_proxies'] ?? 'off') === 'on',
+        ];
+    }
+
+    foreach ($proxyConfig['allowlist'] as $entry) {
+        if (iplogger_ipMatchesProxy($ip, $entry)) {
+            return true;
+        }
+    }
+
+    if ($proxyConfig['trust_private'] && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
         return true;
     }
 
-    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+    return false;
+}
+
+function iplogger_ipMatchesProxy(string $ip, string $entry): bool
+{
+    if ($entry === '') {
+        return false;
+    }
+
+    if (strpos($entry, '/') === false) {
+        return $ip === $entry;
+    }
+
+    [$subnet, $prefix] = explode('/', $entry, 2);
+    if ($prefix === null || $prefix === '') {
+        return false;
+    }
+
+    $ipBin = @inet_pton($ip);
+    $subnetBin = @inet_pton($subnet);
+    if ($ipBin === false || $subnetBin === false || strlen($ipBin) !== strlen($subnetBin)) {
+        return false;
+    }
+
+    $prefixLength = (int) $prefix;
+    $maxPrefix = strlen($ipBin) * 8;
+    if ($prefixLength < 0 || $prefixLength > $maxPrefix) {
+        return false;
+    }
+
+    $fullBytes = intdiv($prefixLength, 8);
+    $remainingBits = $prefixLength % 8;
+
+    if ($fullBytes > 0 && substr($ipBin, 0, $fullBytes) !== substr($subnetBin, 0, $fullBytes)) {
+        return false;
+    }
+
+    if ($remainingBits === 0) {
+        return true;
+    }
+
+    $maskByte = (0xFF << (8 - $remainingBits)) & 0xFF;
+
+    return (ord($ipBin[$fullBytes]) & $maskByte) === (ord($subnetBin[$fullBytes]) & $maskByte);
 }
 
 function iplogger_logSilently(string $message): void
