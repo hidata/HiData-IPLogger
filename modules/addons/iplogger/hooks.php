@@ -56,41 +56,86 @@ function iplogger_sanitizeAgent(string $agent): string
     return preg_replace('/[\\x00-\\x1F\\x7F]/', '', $clean);
 }
 
+function iplogger_extractClientId(array $vars): int
+{
+    $candidates = [
+        $vars['client_id'] ?? null,
+        $vars['clientId'] ?? null,
+        $vars['ClientID'] ?? null,
+        $vars['clientid'] ?? null,
+        $vars['userid'] ?? null,
+        $vars['userId'] ?? null,
+        $vars['uid'] ?? null,
+    ];
+
+    $nested = [
+        $vars['ClientDetails']['id'] ?? null,
+        $vars['client']['id'] ?? null,
+    ];
+
+    foreach (array_merge($candidates, $nested) as $value) {
+        if (is_numeric($value)) {
+            $id = (int) $value;
+            if ($id > 0) {
+                return $id;
+            }
+        }
+    }
+
+    if (isset($_SESSION['uid']) && (int) $_SESSION['uid'] > 0) {
+        return (int) $_SESSION['uid'];
+    }
+
+    return 0;
+}
+
 add_hook('ClientLogin', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
+    iplogger_capture($clientId, 'login');
+});
+
+add_hook('UserLogin', 1, function ($vars) {
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'login');
 });
 
 add_hook('ClientChangePassword', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
+    iplogger_capture($clientId, 'password');
+});
+
+add_hook('UserChangePassword', 1, function ($vars) {
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'password');
 });
 
 add_hook('ClientChangeEmail', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
+    iplogger_capture($clientId, 'email');
+});
+
+add_hook('UserChangeEmail', 1, function ($vars) {
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'email');
 });
 
 add_hook('AfterRequestCancellation', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'cancellation');
 });
 
 add_hook('ClientAdd', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'register');
 });
 
 add_hook('ClientEdit', 1, function ($vars) {
-    $clientId = (int) ($vars['userid'] ?? 0);
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'profile');
 });
 
 add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
-    $clientId = (int) ($vars['ClientID'] ?? 0);
-    if ($clientId <= 0) {
-        $clientId = (int) ($vars['ClientDetails']['id'] ?? 0);
-    }
+    $clientId = iplogger_extractClientId($vars);
     iplogger_capture($clientId, 'order');
 });
 
