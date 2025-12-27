@@ -168,63 +168,61 @@ add_hook('AdminAreaClientSummaryPage', 1, function ($vars) {
         }
     }
 
+    $modalId = 'iplogger-modal-' . $clientId;
+
     ob_start();
     ?>
     <div class="panel panel-default" id="iplogger-panel">
         <div class="panel-heading">
             <span>IP Logs</span>
-            <button class="btn btn-default btn-xs pull-right" type="button" id="toggle-iplogger">نمایش IPهای ثبت شده</button>
-        </div>
-        <div class="panel-body" id="iplogger-body" style="display:none;">
-            <?php if (count($logs) === 0): ?>
-                <p class="text-muted">رکوردی برای این مشتری ثبت نشده است.</p>
-            <?php else: ?>
-                <div class="table-responsive">
-                    <table class="table table-condensed">
-                        <thead>
-                            <tr>
-                                <th>تاریخ/ساعت</th>
-                                <th>عملیات</th>
-                                <th>IP</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($logs as $log): ?>
-                            <?php $otherClients = ($ipUsage[$log->ip] ?? 0) - 1; ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($log->time, ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td><?php echo htmlspecialchars($log->action, ENT_QUOTES, 'UTF-8'); ?></td>
-                                <td>
-                                    <?php echo htmlspecialchars($log->ip, ENT_QUOTES, 'UTF-8'); ?>
-                                    <?php if ($otherClients > 0): ?>
-                                        <div class="text-muted" style="font-size:10px;">ثبت شده برای <?php echo $otherClients; ?> مشتری دیگر</div>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            <?php endif; ?>
+            <button class="btn btn-default btn-xs pull-right" type="button" data-toggle="modal" data-target="#<?php echo $modalId; ?>">نمایش IPهای ثبت شده</button>
         </div>
     </div>
-    <script>
-        (function() {
-            var btn = document.getElementById('toggle-iplogger');
-            var body = document.getElementById('iplogger-body');
-            if (btn && body) {
-                btn.addEventListener('click', function () {
-                    if (body.style.display === 'none') {
-                        body.style.display = 'block';
-                        btn.textContent = 'مخفی کردن';
-                    } else {
-                        body.style.display = 'none';
-                        btn.textContent = 'نمایش IPهای ثبت شده';
-                    }
-                });
-            }
-        })();
-    </script>
+    <div class="modal fade" id="<?php echo $modalId; ?>" tabindex="-1" role="dialog" aria-labelledby="<?php echo $modalId; ?>-label">
+        <div class="modal-dialog" role="document" style="width:800px; max-width:90%;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="<?php echo $modalId; ?>-label">IPهای ثبت شده</h4>
+                </div>
+                <div class="modal-body">
+                    <?php if (count($logs) === 0): ?>
+                        <p class="text-muted">رکوردی برای این مشتری ثبت نشده است.</p>
+                    <?php else: ?>
+                        <div class="table-responsive">
+                            <table class="table table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>تاریخ/ساعت</th>
+                                        <th>عملیات</th>
+                                        <th>IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($logs as $log): ?>
+                                    <?php $otherClients = ($ipUsage[$log->ip] ?? 0) - 1; ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($log->time, ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?php echo htmlspecialchars($log->action, ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <?php echo htmlspecialchars($log->ip, ENT_QUOTES, 'UTF-8'); ?>
+                                            <?php if ($otherClients > 0): ?>
+                                                <div class="text-muted" style="font-size:10px;">ثبت شده برای <?php echo $otherClients; ?> مشتری دیگر</div>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <?php
     return ob_get_clean();
 });
