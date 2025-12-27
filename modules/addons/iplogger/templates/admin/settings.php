@@ -30,6 +30,19 @@ $settings = $settings ?? HiDataIPLogger\Helper::getSettings();
                     </div>
 
                     <div class="panel panel-default">
+                        <div class="panel-heading">دیباگ</div>
+                        <div class="panel-body">
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="debug_logging" <?php echo ($settings['debug_logging'] ?? 'off') === 'on' ? 'checked' : ''; ?> />
+                                    فعال‌سازی لاگ دیباگ در Module Log
+                                </label>
+                                <p class="help-block" style="margin-bottom:0;">در صورت فعال بودن، جزئیات بروزرسانی کشور/ISP و درخواست‌های مربوطه در Module Log ثبت می‌شود.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-default">
                         <div class="panel-heading">رویدادهای قابل ثبت</div>
                         <div class="panel-body">
                             <div class="row">
