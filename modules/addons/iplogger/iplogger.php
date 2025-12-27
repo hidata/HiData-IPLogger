@@ -82,6 +82,7 @@ function iplogger_output($vars)
             'action_register' => isset($_POST['action_register']) ? 'on' : 'off',
             'action_profile' => isset($_POST['action_profile']) ? 'on' : 'off',
             'action_order' => isset($_POST['action_order']) ? 'on' : 'off',
+            'debug_logging' => isset($_POST['debug_logging']) ? 'on' : 'off',
             'trusted_proxies' => trim((string) ($_POST['trusted_proxies'] ?? '')),
             'trust_private_proxies' => isset($_POST['trust_private_proxies']) ? 'on' : 'off',
             'retention_days' => max(0, (int) ($_POST['retention_days'] ?? 180)),

@@ -21,6 +21,7 @@ class Helper
             'action_register' => 'on',
             'action_profile' => 'on',
             'action_order' => 'on',
+            'debug_logging' => 'off',
             'trusted_proxies' => '',
             'trust_private_proxies' => 'off',
             'retention_days' => '180',
@@ -76,6 +77,41 @@ class Helper
         }
 
         return $admin->hasPermission('Configure Addon Modules') || $admin->hasPermission('View Clients');
+    }
+
+    public static function isDebugEnabled(): bool
+    {
+        static $enabled = null;
+
+        if ($enabled === null) {
+            $settings = self::getSettings();
+            $enabled = ($settings['debug_logging'] ?? 'off') === 'on';
+        }
+
+        return (bool) $enabled;
+    }
+
+    public static function debugLog(string $action, $request = '', $response = '', $data = ''): void
+    {
+        if (!self::isDebugEnabled()) {
+            return;
+        }
+
+        try {
+            if (function_exists('logModuleCall')) {
+                logModuleCall(self::MODULE_NAME, $action, $request, $response, $data);
+            } elseif (function_exists('logActivity')) {
+                $parts = array_filter([
+                    $action,
+                    is_string($request) ? $request : json_encode($request),
+                    is_string($response) ? $response : json_encode($response),
+                    is_string($data) ? $data : json_encode($data),
+                ]);
+                logActivity('[iplogger debug] ' . implode(' | ', $parts));
+            }
+        } catch (Throwable $e) {
+            self::logSilently('HiData IP Logger debug log failed: ' . $e->getMessage());
+        }
     }
 
     public static function shouldLogAction(string $action): bool

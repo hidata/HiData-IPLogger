@@ -243,6 +243,7 @@ function iplogger_enrichPendingLogs(): void
 {
     $settings = Helper::getSettings();
     if (($settings['log_enabled'] ?? 'off') !== 'on') {
+        Helper::debugLog('enrich-pending:skip', ['reason' => 'logging disabled']);
         return;
     }
 
@@ -254,9 +255,12 @@ function iplogger_enrichPendingLogs(): void
         ->limit(20)
         ->get();
 
+    Helper::debugLog('enrich-pending:start', ['count' => count($pending)]);
+
     foreach ($pending as $row) {
         $enriched = iplogger_fetchIpDetails($row->ip);
         if (!$enriched) {
+            Helper::debugLog('enrich-pending:lookup-failed', ['id' => $row->id, 'ip' => $row->ip]);
             continue;
         }
 
@@ -266,6 +270,8 @@ function iplogger_enrichPendingLogs(): void
                 'country' => $enriched['country'],
                 'asn' => $enriched['asn'],
             ]);
+
+        Helper::debugLog('enrich-pending:updated', ['id' => $row->id, 'ip' => $row->ip], '', $enriched);
     }
 }
 
@@ -293,20 +299,26 @@ function iplogger_fetchIpDetails(string $ip): ?array
     }
 
     $url = 'https://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message';
+    Helper::debugLog('ip-lookup:request', ['ip' => $ip, 'url' => $url]);
 
     try {
         $client = new \GuzzleHttp\Client(['timeout' => 5, 'http_errors' => false]);
         $response = $client->get($url);
+        Helper::debugLog('ip-lookup:response', ['ip' => $ip], ['status' => $response->getStatusCode()]);
         $data = json_decode((string) $response->getBody(), true);
         if (!is_array($data) || ($data['status'] ?? '') !== 'success') {
+            Helper::debugLog('ip-lookup:failed', ['ip' => $ip], $data);
             return null;
         }
+
+        Helper::debugLog('ip-lookup:success', ['ip' => $ip], '', ['country' => $data['countryCode'] ?? null, 'asn' => $data['isp'] ?? null]);
 
         return [
             'country' => $data['countryCode'] ?? null,
             'asn' => $data['isp'] ?? null,
         ];
     } catch (Exception $e) {
+        Helper::debugLog('ip-lookup:error', ['ip' => $ip, 'url' => $url], $e->getMessage());
         return null;
     }
 }
