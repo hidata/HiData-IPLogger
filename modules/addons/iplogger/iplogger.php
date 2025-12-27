@@ -9,6 +9,7 @@ use WHMCS\Database\Capsule;
 use WHMCS\Security\Csrf;
 
 require_once __DIR__ . '/lib/Helper.php';
+require_once __DIR__ . '/lib/converter_2.php';
 
 function iplogger_config()
 {
