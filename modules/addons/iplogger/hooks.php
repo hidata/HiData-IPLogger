@@ -298,7 +298,7 @@ function iplogger_fetchIpDetails(string $ip): ?array
         return null;
     }
 
-    $url = 'https://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message';
+    $url = 'http://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message';
     Helper::debugLog('ip-lookup:request', ['ip' => $ip, 'url' => $url]);
 
     try {
