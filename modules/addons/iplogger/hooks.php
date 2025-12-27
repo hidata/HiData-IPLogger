@@ -66,6 +66,24 @@ add_hook('AfterRequestCancellation', 1, function ($vars) {
     iplogger_capture($clientId, 'cancellation');
 });
 
+add_hook('ClientAdd', 1, function ($vars) {
+    $clientId = (int) ($vars['userid'] ?? 0);
+    iplogger_capture($clientId, 'register');
+});
+
+add_hook('ClientEdit', 1, function ($vars) {
+    $clientId = (int) ($vars['userid'] ?? 0);
+    iplogger_capture($clientId, 'profile');
+});
+
+add_hook('AfterShoppingCartCheckout', 1, function ($vars) {
+    $clientId = (int) ($vars['ClientID'] ?? 0);
+    if ($clientId <= 0) {
+        $clientId = (int) ($vars['ClientDetails']['id'] ?? 0);
+    }
+    iplogger_capture($clientId, 'order');
+});
+
 add_hook('AfterCronJob', 1, function () {
     $settings = Helper::getSettings();
 
@@ -203,7 +221,7 @@ function iplogger_fetchIpDetails(string $ip): ?array
         return null;
     }
 
-    $url = 'https://ip-api.com/json/' . urlencode($ip) . '?fields=status,country,as,message';
+    $url = 'https://ip-api.com/json/' . urlencode($ip) . '?fields=status,countryCode,isp,message';
 
     try {
         $client = new \GuzzleHttp\Client(['timeout' => 5, 'http_errors' => false]);
@@ -214,8 +232,8 @@ function iplogger_fetchIpDetails(string $ip): ?array
         }
 
         return [
-            'country' => $data['country'] ?? null,
-            'asn' => $data['as'] ?? null,
+            'country' => $data['countryCode'] ?? null,
+            'asn' => $data['isp'] ?? null,
         ];
     } catch (Exception $e) {
         return null;

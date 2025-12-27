@@ -4,6 +4,9 @@ $actionLabels = [
     'password' => 'تغییر رمز',
     'email' => 'تغییر ایمیل',
     'cancellation' => 'درخواست لغو سرویس',
+    'register' => 'ثبت‌نام',
+    'profile' => 'به‌روزرسانی پروفایل',
+    'order' => 'ثبت سفارش',
 ];
 
 $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;

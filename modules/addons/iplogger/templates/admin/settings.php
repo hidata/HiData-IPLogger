@@ -38,6 +38,24 @@ $settings = $settings ?? HiDataIPLogger\Helper::getSettings();
                     ثبت درخواست لغو سرویس
                 </label>
             </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="action_register" <?php echo ($settings['action_register'] ?? 'off') === 'on' ? 'checked' : ''; ?> />
+                    ثبت ثبت‌نام (ایجاد مشتری)
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="action_profile" <?php echo ($settings['action_profile'] ?? 'off') === 'on' ? 'checked' : ''; ?> />
+                    ثبت بروزرسانی پروفایل
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="action_order" <?php echo ($settings['action_order'] ?? 'off') === 'on' ? 'checked' : ''; ?> />
+                    ثبت سفارش جدید
+                </label>
+            </div>
             <div class="form-group" style="margin-top:15px; max-width:320px;">
                 <label for="retentionDays">مدت نگهداری (روز)</label>
                 <input id="retentionDays" type="number" class="form-control" min="0" name="retention_days" value="<?php echo (int) ($settings['retention_days'] ?? 180); ?>" />

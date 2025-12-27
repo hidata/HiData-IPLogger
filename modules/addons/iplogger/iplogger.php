@@ -40,6 +40,10 @@ function iplogger_activate()
             });
         }
 
+        if (!Capsule::schema()->hasTable('mod_iplogger_conf')) {
+            Helper::createConfigTable();
+        }
+
         Helper::ensureDefaults();
     } catch (Exception $e) {
         return ['status' => 'error', 'description' => $e->getMessage()];
@@ -73,6 +77,9 @@ function iplogger_output($vars)
             'action_password' => isset($_POST['action_password']) ? 'on' : 'off',
             'action_email' => isset($_POST['action_email']) ? 'on' : 'off',
             'action_cancellation' => isset($_POST['action_cancellation']) ? 'on' : 'off',
+            'action_register' => isset($_POST['action_register']) ? 'on' : 'off',
+            'action_profile' => isset($_POST['action_profile']) ? 'on' : 'off',
+            'action_order' => isset($_POST['action_order']) ? 'on' : 'off',
             'retention_days' => max(0, (int) ($_POST['retention_days'] ?? 180)),
         ];
         Helper::saveSettings($payload);

@@ -17,15 +17,20 @@ class Helper
             'action_password' => 'on',
             'action_email' => 'on',
             'action_cancellation' => 'on',
+            'action_register' => 'on',
+            'action_profile' => 'on',
+            'action_order' => 'on',
             'retention_days' => '180',
         ];
     }
 
     public static function getSettings(): array
     {
-        $rows = Capsule::table('tbladdonmodules')
-            ->where('module', self::MODULE_NAME)
-            ->pluck('value', 'setting');
+        $rows = [];
+        if (Capsule::schema()->hasTable('mod_iplogger_conf')) {
+            $rows = Capsule::table('mod_iplogger_conf')
+                ->pluck('value', 'setting');
+        }
 
         $settings = self::defaults();
         foreach ($rows as $key => $value) {
@@ -37,10 +42,14 @@ class Helper
 
     public static function saveSettings(array $settings): void
     {
+        if (!Capsule::schema()->hasTable('mod_iplogger_conf')) {
+            self::createConfigTable();
+        }
+
         foreach ($settings as $key => $value) {
-            Capsule::table('tbladdonmodules')
+            Capsule::table('mod_iplogger_conf')
                 ->updateOrInsert(
-                    ['module' => self::MODULE_NAME, 'setting' => $key],
+                    ['setting' => $key],
                     ['value' => $value]
                 );
         }
@@ -78,6 +87,9 @@ class Helper
             'password' => 'action_password',
             'email' => 'action_email',
             'cancellation' => 'action_cancellation',
+            'register' => 'action_register',
+            'profile' => 'action_profile',
+            'order' => 'action_order',
         ];
 
         $key = $map[$action] ?? null;
@@ -95,5 +107,13 @@ class Helper
             'agent' => $agent,
             'time' => Capsule::raw('NOW()'),
         ]);
+    }
+
+    public static function createConfigTable(): void
+    {
+        Capsule::schema()->create('mod_iplogger_conf', function ($table) {
+            $table->string('setting')->unique();
+            $table->text('value')->nullable();
+        });
     }
 }
