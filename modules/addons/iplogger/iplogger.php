@@ -32,11 +32,16 @@ function iplogger_activate()
                 $table->string('ip', 45);
                 $table->string('asn', 191)->nullable();
                 $table->string('country', 191)->nullable();
+                $table->string('network', 50)->nullable();
                 $table->text('agent');
                 $table->timestamp('time')->useCurrent();
                 $table->index('client_id');
                 $table->index('ip');
                 $table->index('action');
+            });
+        } elseif (!Capsule::schema()->hasColumn('mod_iplogger', 'network')) {
+            Capsule::schema()->table('mod_iplogger', function ($table) {
+                $table->string('network', 50)->nullable()->after('country');
             });
         }
 

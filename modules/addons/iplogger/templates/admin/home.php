@@ -10,6 +10,11 @@ $actionLabels = [
 ];
 
 $countryNamesFa = require __DIR__ . '/../assets/countries-fa.php';
+$networkLabels = [
+    'mobile' => 'موبایل',
+    'proxy' => 'پراکسی',
+    'hosting' => 'دیتاسنتر',
+];
 
 $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
 ?>
@@ -71,6 +76,7 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                             $flagFile = __DIR__ . '/../assets/flags/' . strtolower($countryCode) . '.svg';
                             $flagUrl = is_file($flagFile) ? '../modules/addons/iplogger/templates/assets/flags/' . strtolower($countryCode) . '.svg' : null;
                             $asn = htmlspecialchars((string) $log->asn, ENT_QUOTES, 'UTF-8');
+                            $networkLabel = $networkLabels[strtolower((string) $log->network)] ?? null;
                             $otherClients = ($ipUsage[$log->ip] ?? 0) - 1;
                             $clientName = $clientNames[(int) $log->client_id] ?? 'نامشخص';
                             $clientLabel = ((int) $log->client_id) . ' - ' . $clientName;
@@ -94,7 +100,7 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                                 <?php if ($country !== ''): ?>
                                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                                         <?php if ($flagUrl !== null): ?>
-                                            <img src="<?php echo $flagUrl; ?>" alt="" style="width:20px; height:13px; object-fit:cover; border:1px solid #ddd; border-radius:2px;">
+                                            <img src="<?php echo $flagUrl; ?>" alt="" style="width:20px; height:13px; object-fit:cover; border-radius:2px;">
                                         <?php endif; ?>
                                         <strong><?php echo $country; ?></strong>
                                     </div>
@@ -105,7 +111,12 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                                     <span class="text-muted">نامشخص</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo $asn !== '' ? $asn : '<span class="text-muted">نامشخص</span>'; ?></td>
+                            <td>
+                                <?php echo $asn !== '' ? $asn : '<span class="text-muted">نامشخص</span>'; ?>
+                                <?php if ($networkLabel !== null): ?>
+                                    <div class="text-muted" style="font-size:11px; margin-top:4px;">شبکه <?php echo htmlspecialchars($networkLabel, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td style="max-width:220px; word-break:break-all;"> <?php echo $agent; ?> </td>
                         </tr>
                     <?php endforeach; ?>
