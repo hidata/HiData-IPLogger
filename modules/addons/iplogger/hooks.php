@@ -2,6 +2,7 @@
 
 use HiDataIPLogger\Helper;
 use WHMCS\Database\Capsule;
+use Throwable;
 
 if (!defined('WHMCS')) {
     die('This file cannot be accessed directly');
@@ -20,24 +21,34 @@ function iplogger_capture(int $clientId, string $action): void
 
     $ip = iplogger_detectIp();
     $agent = substr(iplogger_sanitizeAgent($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 1000);
-    Helper::logEvent($clientId, $action, $ip, $agent);
+    try {
+        Helper::logEvent($clientId, $action, $ip, $agent);
+    } catch (Throwable $e) {
+        iplogger_logSilently('HiData IP Logger failed to log event: ' . $e->getMessage());
+    }
 }
 
 function iplogger_detectIp(): string
 {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $remoteIp = $_SERVER['REMOTE_ADDR'] ?? '';
+    $candidate = $remoteIp;
+
     $forwarded = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
-    if (!empty($forwarded)) {
-        $parts = explode(',', $forwarded);
-        $candidate = trim($parts[0]);
-        if (filter_var($candidate, FILTER_VALIDATE_IP)) {
-            $ip = $candidate;
+    if (iplogger_isTrustedProxy($remoteIp) && !empty($forwarded)) {
+        $parts = array_filter(array_map('trim', explode(',', $forwarded)));
+        foreach ($parts as $entry) {
+            if (filter_var($entry, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                $candidate = $entry;
+                break;
+            }
         }
     }
-    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-        $ip = '0.0.0.0';
+
+    if (!filter_var($candidate, FILTER_VALIDATE_IP)) {
+        $candidate = '0.0.0.0';
     }
-    return $ip;
+
+    return $candidate;
 }
 
 function iplogger_sanitizeAgent(string $agent): string
@@ -237,5 +248,30 @@ function iplogger_fetchIpDetails(string $ip): ?array
         ];
     } catch (Exception $e) {
         return null;
+    }
+}
+
+function iplogger_isTrustedProxy(string $ip): bool
+{
+    if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+        return false;
+    }
+
+    $trusted = array_filter(array_map('trim', explode(',', $_ENV['IPLOGGER_TRUSTED_PROXIES'] ?? '')));
+    if (in_array($ip, $trusted, true)) {
+        return true;
+    }
+
+    return filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
+}
+
+function iplogger_logSilently(string $message): void
+{
+    try {
+        if (function_exists('logActivity')) {
+            logActivity($message);
+        }
+    } catch (Throwable $e) {
+        // Swallow all logging errors to avoid affecting the caller.
     }
 }
