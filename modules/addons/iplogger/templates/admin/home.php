@@ -100,7 +100,7 @@ $totalPages = $limit > 0 ? (int) ceil($total / $limit) : 1;
                                 <?php if ($country !== ''): ?>
                                     <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                                         <?php if ($flagUrl !== null): ?>
-                                            <img src="<?php echo $flagUrl; ?>" alt="" style="width:20px; height:13px; object-fit:cover; border:1px solid #ddd; border-radius:2px;">
+                                            <img src="<?php echo $flagUrl; ?>" alt="" style="width:20px; height:13px; object-fit:cover; border-radius:2px;">
                                         <?php endif; ?>
                                         <strong><?php echo $country; ?></strong>
                                     </div>
