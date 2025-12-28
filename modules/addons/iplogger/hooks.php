@@ -14,7 +14,7 @@ require_once __DIR__ . '/lib/Helper.php';
  */
 function iplogger_capture(int $clientId, string $action): void
 {
-    if ($clientId <= 0 || !Helper::shouldLogAction($action)) {
+    if (iplogger_isAdminContext() || $clientId <= 0 || !Helper::shouldLogAction($action)) {
         return;
     }
 
@@ -87,6 +87,15 @@ function iplogger_extractClientId(array $vars): int
     }
 
     return 0;
+}
+
+function iplogger_isAdminContext(): bool
+{
+    if (defined('ADMINAREA') && ADMINAREA) {
+        return true;
+    }
+
+    return isset($_SESSION['adminid']) && (int) $_SESSION['adminid'] > 0;
 }
 
 add_hook('ClientLogin', 1, function ($vars) {
