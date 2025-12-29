@@ -12,7 +12,7 @@ require_once __DIR__ . '/lib/Helper.php';
 /**
  * Core logger for supported actions.
  */
-function iplogger_capture(int $clientId, string $action): void
+function iplogger_capture(int $clientId, string $action, bool $rememberLoginIp = false): void
 {
     if (iplogger_isAdminContext() || $clientId <= 0 || !Helper::shouldLogAction($action)) {
         return;
@@ -22,6 +22,10 @@ function iplogger_capture(int $clientId, string $action): void
     $agent = substr(iplogger_sanitizeAgent($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 1000);
     try {
         Helper::logEvent($clientId, $action, $ip, $agent);
+        if ($rememberLoginIp && filter_var($ip, FILTER_VALIDATE_IP) && $ip !== '0.0.0.0') {
+            $_SESSION['iplogger_login_ip'] = $ip;
+            $_SESSION['iplogger_last_logged_ip'] = $ip;
+        }
     } catch (Throwable $e) {
         iplogger_logSilently('HiData IP Logger failed to log event: ' . $e->getMessage());
     }
@@ -100,12 +104,50 @@ function iplogger_isAdminContext(): bool
 
 add_hook('ClientLogin', 1, function ($vars) {
     $clientId = iplogger_extractClientId($vars);
-    iplogger_capture($clientId, 'login');
+    iplogger_capture($clientId, 'login', true);
 });
 
 add_hook('UserLogin', 1, function ($vars) {
     $clientId = iplogger_extractClientId($vars);
-    iplogger_capture($clientId, 'login');
+    iplogger_capture($clientId, 'login', true);
+});
+
+add_hook('ClientAreaPage', 1, function ($vars) {
+    if (iplogger_isAdminContext()) {
+        return;
+    }
+
+    $settings = Helper::getSettings();
+    if (($settings['log_enabled'] ?? 'off') !== 'on') {
+        return;
+    }
+
+    $clientId = iplogger_extractClientId($vars);
+    if ($clientId <= 0) {
+        return;
+    }
+
+    $currentIp = iplogger_detectIp();
+    if (!filter_var($currentIp, FILTER_VALIDATE_IP) || $currentIp === '0.0.0.0') {
+        return;
+    }
+
+    $loginIp = $_SESSION['iplogger_login_ip'] ?? null;
+    $lastLoggedIp = $_SESSION['iplogger_last_logged_ip'] ?? null;
+
+    if (!$loginIp || $currentIp === $loginIp || $currentIp === $lastLoggedIp) {
+        return;
+    }
+
+    $agent = substr(iplogger_sanitizeAgent($_SERVER['HTTP_USER_AGENT'] ?? ''), 0, 1000);
+
+    try {
+        Helper::logEvent($clientId, 'ip-change', $currentIp, $agent);
+        $_SESSION['iplogger_login_ip'] = $currentIp;
+        $_SESSION['iplogger_last_logged_ip'] = $currentIp;
+    } catch (Throwable $e) {
+        iplogger_logSilently('HiData IP Logger failed to log IP change: ' . $e->getMessage());
+    }
 });
 
 add_hook('ClientChangePassword', 1, function ($vars) {
